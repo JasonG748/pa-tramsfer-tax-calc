@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PA Transfer Tax Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744;
+    --navy-light: #243356;
+    --gold: #c9a84c;
+    --gold-light: #e6cc80;
+    --slate: #64748b;
+    --light: #f1f5f9;
+    --white: #ffffff;
+    --green: #16a34a;
+    --red: #dc2626;
+    --border: #e2e8f0;
+    --shadow: 0 4px 24px rgba(26, 39, 68, 0.10);
+    --radius: 10px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--light);
+    color: var(--navy);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  header {
+    width: 100%;
+    background: var(--navy);
+    padding: 20px 0;
+    text-align: center;
+    border-bottom: 3px solid var(--gold);
+  }
+
+  header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+
+  header h1 span { color: var(--gold); }
+
+  header p {
+    color: var(--slate);
+    font-size: 0.82rem;
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 680px;
+    padding: 28px 20px 40px;
+  }
+
+  /* INPUT CARD */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px 28px 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--slate);
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.85rem;
+    margin-bottom: 6px;
+    color: var(--navy);
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    color: var(--navy);
+    transition: border-color 0.2s;
+    background: var(--white);
+  }
+
+  input[type="text"]:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+  }
+
+  .input-group { margin-bottom: 16px; position: relative; }
+  .input-group:last-of-type { margin-bottom: 0; }
+
+  .input-prefix {
+    position: absolute;
+    left: 14px;
+    top: 38px;
+    font-size: 1rem;
+    color: var(--slate);
+    pointer-events: none;
+    font-weight: 600;
+  }
+
+  .input-group .has-prefix { padding-left: 28px; }
+
+  /* Autocomplete dropdown */
+  .ac-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 100;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.10);
+    display: none;
+  }
+
+  .ac-dropdown.active { display: block; }
+
+  .ac-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.selected { background: #f8f6f0; }
+
+  .ac-item .ac-muni { font-weight: 600; color: var(--navy); }
+  .ac-item .ac-county { color: var(--slate); font-size: 0.8rem; margin-left: 6px; }
+  .ac-item .ac-rate {
+    float: right;
+    font-weight: 700;
+    color: var(--gold);
+    font-size: 0.85rem;
+  }
+
+  .default-note {
+    font-size: 0.78rem;
+    color: var(--slate);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .selected-badge {
+    display: none;
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: #f8f6f0;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    color: var(--navy);
+    font-weight: 500;
+  }
+
+  .selected-badge.visible { display: flex; align-items: center; justify-content: space-between; }
+  .selected-badge .badge-clear {
+    cursor: pointer;
+    color: var(--slate);
+    font-size: 0.75rem;
+    text-decoration: underline;
+  }
+
+  /* BUTTON */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    margin-top: 20px;
+    letter-spacing: 0.02em;
+  }
+
+  .btn:hover { background: var(--navy-light); }
+  .btn:active { transform: scale(0.99); }
+
+  /* RESULTS */
+  #results { display: none; }
+  #results.visible { display: block; }
+
+  .total-banner {
+    text-align: center;
+    padding: 22px 20px;
+    background: var(--navy);
+    border-radius: var(--radius) var(--radius) 0 0;
+    color: var(--white);
+  }
+
+  .total-banner .total-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold-light);
+    margin-bottom: 4px;
+  }
+
+  .total-banner .total-rate {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--white);
+  }
+
+  .total-banner .total-amount {
+    font-size: 1.1rem;
+    color: var(--gold-light);
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  .breakdown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--white);
+    border-radius: 0 0 var(--radius) var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .breakdown-col {
+    padding: 20px 22px 22px;
+  }
+
+  .breakdown-col:first-child {
+    border-right: 1.5px solid var(--border);
+  }
+
+  .breakdown-col h3 {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--slate);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .split-total {
+    text-align: center;
+    margin-bottom: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  .split-total .amount {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--navy);
+  }
+
+  .line-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 7px 0;
+    font-size: 0.85rem;
+  }
+
+  .line-item .li-label { color: var(--slate); }
+
+  .line-item .li-pct {
+    font-weight: 600;
+    color: var(--navy);
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .line-item .li-amt {
+    font-weight: 700;
+    color: var(--navy);
+    min-width: 80px;
+    text-align: right;
+  }
+
+  .line-item-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+
+  .line-item-row:last-child { border-bottom: none; }
+
+  .li-name { color: var(--slate); flex: 1; }
+  .li-data { display: flex; gap: 12px; }
+  .li-data .pct { font-weight: 600; color: var(--navy); min-width: 48px; text-align: right; }
+  .li-data .amt { font-weight: 700; color: var(--navy); min-width: 76px; text-align: right; }
+
+  .disclaimer {
+    margin-top: 18px;
+    font-size: 0.72rem;
+    color: var(--slate);
+    line-height: 1.5;
+    text-align: center;
+    padding: 0 8px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 24px 20px;
+    font-size: 0.75rem;
+    color: var(--slate);
+  }
+
+  @media (max-width: 480px) {
+    .card { padding: 20px 18px 18px; }
+    .breakdown-col { padding: 16px 14px 18px; }
+    .total-banner .total-rate { font-size: 1.8rem; }
+    .split-total .amount { font-size: 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>PA Transfer Tax <span>Calculator</span></h1>
+  <p>Pennsylvania Realty Transfer Tax</p>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <div class="card-title">Transaction Details</div>
+
+    <div class="input-group">
+      <label for="price">Sales Price</label>
+      <span class="input-prefix">$</span>
+      <input type="text" id="price" class="has-prefix" placeholder="350,000" inputmode="numeric" autocomplete="off">
+    </div>
+
+    <div class="input-group">
+      <label for="address">Municipality / City</label>
+      <input type="text" id="address" placeholder="Start typing city, borough, or township…" autocomplete="off">
+      <div class="ac-dropdown" id="acDropdown"></div>
+      <div class="default-note" id="defaultNote">If your municipality isn't listed, the standard 1% local rate applies.</div>
+      <div class="selected-badge" id="selectedBadge">
+        <span id="badgeText"></span>
+        <span class="badge-clear" id="badgeClear">clear</span>
+      </div>
+    </div>
+
+    <button class="btn" id="calcBtn">Calculate Transfer Tax</button>
+  </div>
+
+  <div id="results">
+    <div class="total-banner">
+      <div class="total-label">Total Transfer Tax Rate</div>
+      <div class="total-rate" id="totalRate"></div>
+      <div class="total-amount" id="totalAmount"></div>
+    </div>
+    <div class="breakdown-grid">
+      <div class="breakdown-col">
+        <h3>Buyer's Share (50%)</h3>
+        <div class="split-total"><div class="amount" id="buyerTotal"></div></div>
+        <div id="buyerLines"></div>
+      </div>
+      <div class="breakdown-col">
+        <h3>Seller's Share (50%)</h3>
+        <div class="split-total"><div class="amount" id="sellerTotal"></div></div>
+        <div id="sellerLines"></div>
+      </div>
+    </div>
+    <div class="disclaimer">
+      Assumes customary 50/50 buyer/seller split. PA state portion is always 1%. 
+      Local rates per FNF PA Transfer Tax Variations chart (Jan 2026). 
+      Consult your title company or attorney for final figures.
+    </div>
+  </div>
+
+</div>
+
+<footer>Built for The Mortgage Joint &bull; Wayne, PA</footer>
+
+<script>
+// ── TRANSFER TAX DATA (from FNF chart, Jan 2026) ──
+// Format: { municipality, county, localRate }
+// Standard PA = 1%. Default local = 1%. These are VARIATIONS only.
+const VARIATIONS = [
+  // Allegheny
+  { m: "Bellevue Boro", c: "Allegheny", r: 1.5 },
+  { m: "Bethel Park Municipality", c: "Allegheny", r: 1.5 },
+  { m: "Greentree Boro", c: "Allegheny", r: 1.5 },
+  { m: "Hampton Twp", c: "Allegheny", r: 1.5 },
+  { m: "McCandless Twp", c: "Allegheny", r: 1.5 },
+  { m: "McKeesport City", c: "Allegheny", r: 2 },
+  { m: "Monroeville Municipality", c: "Allegheny", r: 1.5 },
+  { m: "Mt Lebanon Municipality", c: "Allegheny", r: 1.5 },
+  { m: "Mt Oliver Boro", c: "Allegheny", r: 2 },
+  { m: "O'Hara Twp", c: "Allegheny", r: 1.5 },
+  { m: "Penn Hills Municipality", c: "Allegheny", r: 2 },
+  { m: "Pine Twp", c: "Allegheny", r: 1.5 },
+  { m: "Pittsburgh City (Pittsburgh School District)", c: "Allegheny", r: 4 },
+  { m: "Pittsburgh City (Baldwin-Whitehall School District)", c: "Allegheny", r: 3.5 },
+  { m: "Upper St Clair Twp", c: "Allegheny", r: 1.5 },
+  { m: "West Deer Twp", c: "Allegheny", r: 1.5 },
+  { m: "Whitehall Boro", c: "Allegheny", r: 1.5 },
+  // Beaver
+  { m: "Georgetown Boro", c: "Beaver", r: 0.5 },
+  { m: "Hookstown Boro", c: "Beaver", r: 0.5 },
+  // Berks
+  { m: "Reading City", c: "Berks", r: 4.0 },
+  // Centre
+  { m: "Ferguson Twp", c: "Centre", r: 1.75 },
+  { m: "State College Boro", c: "Centre", r: 2 },
+  { m: "Taylor Twp", c: "Centre", r: 0.5 },
+  // Chester
+  { m: "Coatesville City", c: "Chester", r: 2.5 },
+  { m: "Malvern Boro", c: "Chester", r: 1.5 },
+  { m: "Tredyffrin Twp", c: "Chester", r: 1.5 },
+  // Clinton
+  { m: "Colebrook Twp", c: "Clinton", r: 0.5 },
+  { m: "East Keating Twp", c: "Clinton", r: 0.5 },
+  // Delaware
+  { m: "Chester City", c: "Delaware", r: 1.5 },
+  { m: "Radnor Twp", c: "Delaware", r: 1.5 },
+  { m: "Upper Darby Twp", c: "Delaware", r: 1.5 },
+  { m: "Upper Providence Twp", c: "Delaware", r: 2 },
+  // Erie
+  { m: "Edinboro Borough", c: "Erie", r: 1.5 },
+  // Lackawanna
+  { m: "Scranton City", c: "Lackawanna", r: 2.7 },
+  // Lehigh
+  { m: "Allentown City", c: "Lehigh", r: 1.5 },
+  // Luzerne
+  { m: "Kingston Boro", c: "Luzerne", r: 1.5 },
+  { m: "Wilkes-Barre City", c: "Luzerne", r: 2.5 },
+  { m: "Pittston City", c: "Luzerne", r: 2.5 },
+  // Mercer
+  { m: "Farrell City", c: "Mercer", r: 2 },
+  { m: "Hermitage City", c: "Mercer", r: 2 },
+  { m: "Sharon City", c: "Mercer", r: 2 },
+  { m: "Greenville Boro", c: "Mercer", r: 2 },
+  // Philadelphia
+  { m: "Philadelphia", c: "Philadelphia", r: 3.578 },
+  // Somerset
+  { m: "Wellersburg Boro", c: "Somerset", r: 0.5 },
+  // Washington
+  { m: "Peters Township", c: "Washington", r: 1.5 },
+  // Westmoreland
+  { m: "Greensburg City", c: "Westmoreland", r: 1.5 },
+  { m: "Latrobe City", c: "Westmoreland", r: 1.5 },
+  { m: "Murrysville Municipality", c: "Westmoreland", r: 1.5 },
+];
+
+const PA_STATE_RATE = 1; // always 1%
+const DEFAULT_LOCAL_RATE = 1; // standard local
+
+// ── DOM ──
+const priceInput = document.getElementById('price');
+const addressInput = document.getElementById('address');
+const dropdown = document.getElementById('acDropdown');
+const calcBtn = document.getElementById('calcBtn');
+const resultsDiv = document.getElementById('results');
+const defaultNote = document.getElementById('defaultNote');
+const selectedBadge = document.getElementById('selectedBadge');
+const badgeText = document.getElementById('badgeText');
+const badgeClear = document.getElementById('badgeClear');
+
+let selectedVariation = null;
+let acIndex = -1;
+
+// ── FORMAT ──
+function fmt(n) {
+  return n.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 });
+}
+
+function fmtPct(n) {
+  // Remove trailing zeros but keep necessary decimals
+  return n % 1 === 0 ? n + '%' : parseFloat(n.toFixed(3)) + '%';
+}
+
+// ── PRICE FORMATTING ──
+priceInput.addEventListener('input', function () {
+  let raw = this.value.replace(/[^0-9]/g, '');
+  if (raw) {
+    this.value = parseInt(raw).toLocaleString('en-US');
+  }
+});
+
+// ── AUTOCOMPLETE ──
+function renderDropdown(matches) {
+  if (!matches.length) { dropdown.classList.remove('active'); return; }
+  dropdown.innerHTML = matches.map((v, i) =>
+    `<div class="ac-item" data-idx="${i}">
+      <span class="ac-rate">${fmtPct(v.r)} local</span>
+      <span class="ac-muni">${v.m}</span>
+      <span class="ac-county">${v.c} County</span>
+    </div>`
+  ).join('');
+  dropdown.classList.add('active');
+  acIndex = -1;
+}
+
+addressInput.addEventListener('input', function () {
+  const q = this.value.trim().toLowerCase();
+  selectedVariation = null;
+  selectedBadge.classList.remove('visible');
+  defaultNote.style.display = '';
+  if (q.length < 2) { dropdown.classList.remove('active'); return; }
+  const matches = VARIATIONS.filter(v =>
+    v.m.toLowerCase().includes(q) || v.c.toLowerCase().includes(q)
+  ).slice(0, 8);
+  renderDropdown(matches);
+});
+
+addressInput.addEventListener('keydown', function (e) {
+  const items = dropdown.querySelectorAll('.ac-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') { e.preventDefault(); acIndex = Math.min(acIndex + 1, items.length - 1); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); acIndex = Math.max(acIndex - 1, 0); }
+  items.forEach((el, i) => el.classList.toggle('selected', i === acIndex));
+  if (e.key === 'Enter' && acIndex >= 0) { e.preventDefault(); items[acIndex].click(); }
+});
+
+dropdown.addEventListener('click', function (e) {
+  const item = e.target.closest('.ac-item');
+  if (!item) return;
+  const idx = parseInt(item.dataset.idx);
+  const matches = VARIATIONS.filter(v =>
+    v.m.toLowerCase().includes(addressInput.value.trim().toLowerCase()) ||
+    v.c.toLowerCase().includes(addressInput.value.trim().toLowerCase())
+  ).slice(0, 8);
+  selectedVariation = matches[idx];
+  addressInput.value = selectedVariation.m;
+  dropdown.classList.remove('active');
+  defaultNote.style.display = 'none';
+  badgeText.textContent = `${selectedVariation.m}, ${selectedVariation.c} County — ${fmtPct(selectedVariation.r)} local rate`;
+  selectedBadge.classList.add('visible');
+});
+
+badgeClear.addEventListener('click', () => {
+  selectedVariation = null;
+  addressInput.value = '';
+  selectedBadge.classList.remove('visible');
+  defaultNote.style.display = '';
+  addressInput.focus();
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.input-group')) dropdown.classList.remove('active');
+});
+
+// ── CALCULATE ──
+calcBtn.addEventListener('click', function () {
+  const raw = priceInput.value.replace(/[^0-9]/g, '');
+  const price = parseFloat(raw);
+  if (!price || price <= 0) { priceInput.focus(); return; }
+
+  const localRate = selectedVariation ? selectedVariation.r : DEFAULT_LOCAL_RATE;
+  const totalRate = PA_STATE_RATE + localRate;
+  const totalTax = price * (totalRate / 100);
+  const stateTax = price * (PA_STATE_RATE / 100);
+  const localTax = price * (localRate / 100);
+
+  // Each side pays 50%
+  const buyerShare = totalTax / 2;
+  const sellerShare = totalTax / 2;
+  const buyerState = stateTax / 2;
+  const buyerLocal = localTax / 2;
+  const sellerState = stateTax / 2;
+  const sellerLocal = localTax / 2;
+
+  // Render
+  document.getElementById('totalRate').textContent = fmtPct(totalRate);
+  document.getElementById('totalAmount').textContent = fmt(totalTax) + ' total tax on ' + fmt(price);
+  document.getElementById('buyerTotal').textContent = fmt(buyerShare);
+  document.getElementById('sellerTotal').textContent = fmt(sellerShare);
+
+  const lineHTML = (label, pct, amt) =>
+    `<div class="line-item-row">
+      <span class="li-name">${label}</span>
+      <span class="li-data"><span class="pct">${fmtPct(pct)}</span><span class="amt">${fmt(amt)}</span></span>
+    </div>`;
+
+  const buyerHTML = lineHTML('PA State', PA_STATE_RATE / 2, buyerState) + lineHTML('Local', localRate / 2, buyerLocal);
+  const sellerHTML = lineHTML('PA State', PA_STATE_RATE / 2, sellerState) + lineHTML('Local', localRate / 2, sellerLocal);
+
+  document.getElementById('buyerLines').innerHTML = buyerHTML;
+  document.getElementById('sellerLines').innerHTML = sellerHTML;
+
+  resultsDiv.classList.add('visible');
+  resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
+
+// Allow Enter on price field to trigger calc
+priceInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') calcBtn.click();
+});
+</script>
+
+</body>
+</html>
