@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pa-transfer-tax-calc",
+  "compatibility_date": "2026-05-02",
+  "observability": {
+    "enabled": true
+  },
+  "assets": {
+    "directory": "./public"
+  }
+}
