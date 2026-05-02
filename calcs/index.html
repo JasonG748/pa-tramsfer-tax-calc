@@ -7,17 +7,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --rate-red: #CF3338;
-    --ravenswood: #24272A;
+    --kelly: #00703C;
+    --kelly-dark: #004D27;
+    --kelly-light: #E6F2EB;
+    --silver: #A5ACAF;
+    --silver-dark: #6B7174;
+    --silver-light: #E8EAEB;
+    --black: #0A0A0A;
+    --charcoal: #2A2A2A;
     --white: #FFFFFF;
-    --cream-dark: #E0DDD6;
-    --cream-med: #F6F5F3;
-    --cream-light: #FFFEFB;
-    --blue: #295994;
-    --green: #226257;
-    --green-light: #E0F3F0;
-    --border: #E0DDD6;
-    --shadow: 0 4px 24px rgba(36,39,42,0.08);
+
+    /* legacy aliases mapped to Eagles palette */
+    --rate-red: var(--kelly);
+    --ravenswood: var(--black);
+    --cream-dark: var(--silver);
+    --cream-med: var(--silver-light);
+    --cream-light: var(--white);
+    --blue: var(--charcoal);
+    --green: var(--kelly);
+    --green-light: var(--kelly-light);
+    --border: var(--silver);
+    --shadow: 0 4px 24px rgba(0,0,0,0.10);
     --radius: 10px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -93,7 +103,7 @@
   input[type="text"]:focus {
     outline:none;
     border-color:var(--rate-red);
-    box-shadow:0 0 0 3px rgba(207,51,56,0.12);
+    box-shadow:0 0 0 3px rgba(0,112,60,0.18);
   }
   .input-group { margin-bottom:16px; position:relative; }
   .input-group:last-of-type { margin-bottom:0; }
@@ -119,7 +129,7 @@
     max-height:220px;
     overflow-y:auto;
     z-index:100;
-    box-shadow:0 8px 20px rgba(36,39,42,0.10);
+    box-shadow:0 8px 20px rgba(0,0,0,0.15);
     display:none;
   }
   .ac-dropdown.active { display:block; }
@@ -162,7 +172,7 @@
     transition:background 0.2s,transform 0.1s;
     margin-top:20px;
   }
-  .btn:hover { background:#b82d31; }
+  .btn:hover { background:var(--kelly-dark); }
   .btn:active { transform:scale(0.99); }
   #results { display:none; }
   #results.visible { display:block; }
