@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PA Transfer Tax Calculator</title>
-<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<title>Calculators — Mortgage Banker of the People</title>
+<meta name="description" content="Free PA mortgage calculators for Loan Officers — transfer tax, closing costs, and more.">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     --kelly: #00703C;
@@ -16,399 +17,195 @@
     --black: #0A0A0A;
     --charcoal: #2A2A2A;
     --white: #FFFFFF;
-
-    /* legacy aliases mapped to Eagles palette */
-    --rate-red: var(--kelly);
-    --ravenswood: var(--black);
-    --cream-dark: var(--silver);
-    --cream-med: var(--silver-light);
-    --cream-light: var(--white);
-    --blue: var(--charcoal);
-    --green: var(--kelly);
-    --green-light: var(--kelly-light);
-    --border: var(--silver);
     --shadow: 0 4px 24px rgba(0,0,0,0.10);
-    --radius: 10px;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body {
     font-family:'Figtree',sans-serif;
-    background:var(--cream-med);
-    color:var(--ravenswood);
+    background:var(--silver-light);
+    color:var(--black);
     min-height:100vh;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
   }
   header {
-    width:100%;
-    background:var(--ravenswood);
+    background:var(--black);
     padding:22px 0;
     text-align:center;
-    border-bottom:3px solid var(--rate-red);
+    border-bottom:3px solid var(--kelly);
   }
   header h1 {
     font-weight:700;
-    font-size:1.6rem;
+    font-size:1.5rem;
     color:var(--white);
     letter-spacing:-0.01em;
   }
-  header h1 span { color:var(--rate-red); }
+  header h1 span { color:var(--kelly); }
   header p {
-    color:var(--cream-dark);
-    font-size:0.78rem;
+    color:var(--silver);
+    font-size:0.74rem;
     margin-top:4px;
     letter-spacing:0.06em;
     text-transform:uppercase;
     font-weight:500;
   }
   .container {
-    width:100%;
-    max-width:680px;
-    padding:28px 20px 40px;
+    max-width:780px;
+    margin:0 auto;
+    padding:24px 18px 40px;
+  }
+  .nav {
+    display:flex;
+    gap:10px;
+    margin-bottom:22px;
+    flex-wrap:wrap;
+  }
+  .nav a {
+    color:var(--white);
+    text-decoration:none;
+    font-size:0.82rem;
+    font-weight:600;
+    padding:7px 13px;
+    background:var(--black);
+    border:1.5px solid var(--black);
+    border-radius:7px;
+    transition:all 0.15s;
+  }
+  .nav a:hover { background:var(--kelly); border-color:var(--kelly); }
+  .intro {
+    margin-bottom:22px;
+  }
+  .intro h2 {
+    font-size:1.6rem;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin-bottom:6px;
+  }
+  .intro p {
+    color:var(--charcoal);
+    font-size:0.95rem;
+    line-height:1.5;
+  }
+  .grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+    gap:16px;
   }
   .card {
-    background:var(--cream-light);
-    border-radius:var(--radius);
-    box-shadow:var(--shadow);
-    padding:28px 28px 24px;
-    margin-bottom:20px;
-  }
-  .card-title {
-    font-weight:700;
-    font-size:0.78rem;
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-    color:var(--blue);
-    margin-bottom:18px;
-  }
-  label {
-    display:block;
-    font-weight:600;
-    font-size:0.85rem;
-    margin-bottom:6px;
-    color:var(--ravenswood);
-  }
-  input[type="text"] {
-    width:100%;
-    padding:12px 14px;
-    border:1.5px solid var(--cream-dark);
-    border-radius:8px;
-    font-family:'Figtree',sans-serif;
-    font-size:1rem;
-    color:var(--ravenswood);
-    transition:border-color 0.2s;
     background:var(--white);
-  }
-  input[type="text"]:focus {
-    outline:none;
-    border-color:var(--rate-red);
-    box-shadow:0 0 0 3px rgba(0,112,60,0.18);
-  }
-  .input-group { margin-bottom:16px; position:relative; }
-  .input-group:last-of-type { margin-bottom:0; }
-  .input-prefix {
-    position:absolute;
-    left:14px;
-    top:38px;
-    font-size:1rem;
-    color:var(--cream-dark);
-    pointer-events:none;
-    font-weight:600;
-  }
-  .input-group .has-prefix { padding-left:28px; }
-  .ac-dropdown {
-    position:absolute;
-    top:100%;
-    left:0;
-    right:0;
-    background:var(--white);
-    border:1.5px solid var(--cream-dark);
-    border-top:none;
-    border-radius:0 0 8px 8px;
-    max-height:220px;
-    overflow-y:auto;
-    z-index:100;
-    box-shadow:0 8px 20px rgba(0,0,0,0.15);
-    display:none;
-  }
-  .ac-dropdown.active { display:block; }
-  .ac-item {
-    padding:10px 14px;
-    cursor:pointer;
-    font-size:0.9rem;
-    border-bottom:1px solid var(--cream-med);
-    transition:background 0.15s;
-  }
-  .ac-item:last-child { border-bottom:none; }
-  .ac-item:hover, .ac-item.selected { background:var(--cream-med); }
-  .ac-item .ac-muni { font-weight:600; color:var(--ravenswood); }
-  .ac-item .ac-county { color:var(--blue); font-size:0.8rem; margin-left:6px; }
-  .ac-item .ac-rate { float:right; font-weight:700; color:var(--rate-red); font-size:0.85rem; }
-  .default-note { font-size:0.78rem; color:var(--blue); margin-top:6px; line-height:1.4; }
-  .selected-badge {
-    display:none;
-    margin-top:8px;
-    padding:6px 12px;
-    background:var(--green-light);
-    border-radius:6px;
-    font-size:0.82rem;
-    color:var(--green);
-    font-weight:500;
-  }
-  .selected-badge.visible { display:flex; align-items:center; justify-content:space-between; }
-  .selected-badge .badge-clear { cursor:pointer; color:var(--green); font-size:0.75rem; text-decoration:underline; }
-  .btn {
-    width:100%;
-    padding:14px;
-    background:var(--rate-red);
-    color:var(--white);
-    border:none;
-    border-radius:8px;
-    font-family:'Figtree',sans-serif;
-    font-size:1rem;
-    font-weight:700;
-    cursor:pointer;
-    transition:background 0.2s,transform 0.1s;
-    margin-top:20px;
-  }
-  .btn:hover { background:var(--kelly-dark); }
-  .btn:active { transform:scale(0.99); }
-  #results { display:none; }
-  #results.visible { display:block; }
-  .total-banner {
-    text-align:center;
-    padding:22px 20px;
-    background:var(--ravenswood);
-    border-radius:var(--radius) var(--radius) 0 0;
-    color:var(--white);
-  }
-  .total-banner .total-label {
-    font-size:0.75rem;
-    text-transform:uppercase;
-    letter-spacing:0.1em;
-    color:var(--cream-dark);
-    margin-bottom:4px;
-    font-weight:500;
-  }
-  .total-banner .total-rate { font-size:2.4rem; font-weight:700; color:var(--white); }
-  .total-banner .total-amount { font-size:1.05rem; color:var(--cream-dark); margin-top:2px; font-weight:600; }
-  .total-banner .total-amount strong { color:var(--rate-red); font-weight:700; }
-  .breakdown-grid {
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    background:var(--cream-light);
-    border-radius:0 0 var(--radius) var(--radius);
+    border-radius:10px;
     box-shadow:var(--shadow);
-    overflow:hidden;
-  }
-  .breakdown-col { padding:20px 22px 22px; }
-  .breakdown-col:first-child { border-right:1.5px solid var(--cream-dark); }
-  .breakdown-col h3 {
-    font-size:0.72rem;
-    text-transform:uppercase;
-    letter-spacing:0.08em;
-    color:var(--blue);
-    margin-bottom:14px;
-    text-align:center;
-    font-weight:700;
-  }
-  .split-total { text-align:center; margin-bottom:16px; padding-bottom:14px; border-bottom:1.5px solid var(--cream-dark); }
-  .split-total .amount { font-size:1.5rem; font-weight:700; color:var(--ravenswood); }
-  .line-item-row {
+    padding:22px 22px 20px;
+    border:1.5px solid var(--silver-light);
+    text-decoration:none;
+    color:var(--black);
     display:flex;
-    justify-content:space-between;
-    padding:7px 0;
-    font-size:0.85rem;
-    border-bottom:1px solid var(--cream-med);
+    flex-direction:column;
+    transition:border-color 0.15s, transform 0.15s, box-shadow 0.15s;
   }
-  .line-item-row:last-child { border-bottom:none; }
-  .li-name { color:var(--blue); flex:1; font-weight:500; }
-  .li-data { display:flex; gap:12px; }
-  .li-data .pct { font-weight:600; color:var(--ravenswood); min-width:48px; text-align:right; }
-  .li-data .amt { font-weight:700; color:var(--ravenswood); min-width:76px; text-align:right; }
-  .disclaimer {
-    margin-top:18px;
-    font-size:0.72rem;
-    color:var(--blue);
+  .card.live:hover {
+    border-color:var(--kelly);
+    transform:translateY(-2px);
+    box-shadow:0 8px 32px rgba(0,112,60,0.10);
+  }
+  .card.soon {
+    cursor:default;
+    opacity:0.85;
+  }
+  .icon {
+    width:42px;
+    height:42px;
+    border-radius:9px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:1.25rem;
+    font-weight:800;
+    margin-bottom:14px;
+    background:var(--kelly-light);
+    color:var(--kelly);
+  }
+  .icon.silver { background:var(--silver-light); color:var(--charcoal); }
+  .card h3 {
+    font-size:1.05rem;
+    font-weight:700;
+    margin-bottom:6px;
+  }
+  .card p {
+    font-size:0.86rem;
+    color:var(--charcoal);
     line-height:1.5;
-    text-align:center;
-    padding:0 8px;
+    flex:1;
   }
+  .badge {
+    display:inline-block;
+    margin-top:14px;
+    font-size:0.72rem;
+    font-weight:700;
+    text-transform:uppercase;
+    letter-spacing:0.06em;
+    padding:4px 10px;
+    border-radius:100px;
+    width:fit-content;
+  }
+  .badge.live { background:var(--kelly-light); color:var(--kelly-dark); }
+  .badge.soon { background:var(--silver-light); color:var(--silver-dark); }
   footer {
     text-align:center;
-    padding:24px 20px;
+    padding:22px 18px;
     font-size:0.8rem;
-    color:var(--ravenswood);
+    color:var(--charcoal);
     font-weight:600;
   }
-  @media(max-width:480px){
-    .card{padding:20px 18px 18px;}
-    .breakdown-col{padding:16px 14px 18px;}
-    .total-banner .total-rate{font-size:1.8rem;}
-    .split-total .amount{font-size:1.25rem;}
-  }
+  footer a { color:var(--kelly); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
 </style>
 </head>
 <body>
 <header>
-  <h1>PA Transfer Tax <span>Calculator</span></h1>
-  <p>Pennsylvania Realty Transfer Tax</p>
+  <h1>Calc <span>Hub</span></h1>
+  <p>Free Tools for PA Loan Officers</p>
 </header>
+
 <div class="container">
-  <div class="card">
-    <div class="card-title">Transaction Details</div>
-    <div class="input-group">
-      <label for="price">Sales Price</label>
-      <span class="input-prefix">$</span>
-      <input type="text" id="price" class="has-prefix" placeholder="350,000" inputmode="numeric" autocomplete="off">
-    </div>
-    <div class="input-group">
-      <label for="address">Municipality / City</label>
-      <input type="text" id="address" placeholder="Start typing city, borough, or township…" autocomplete="off">
-      <div class="ac-dropdown" id="acDropdown"></div>
-      <div class="default-note" id="defaultNote">If your municipality isn't listed, the standard 1% local rate applies.</div>
-      <div class="selected-badge" id="selectedBadge">
-        <span id="badgeText"></span>
-        <span class="badge-clear" id="badgeClear">clear</span>
-      </div>
-    </div>
-    <button class="btn" id="calcBtn">Calculate Transfer Tax</button>
+  <nav class="nav">
+    <a href="/">&larr; Home</a>
+  </nav>
+
+  <div class="intro">
+    <h2>Calculators</h2>
+    <p>Pick a tool. Everything runs in your browser — no logins, no data leaves your device.</p>
   </div>
-  <div id="results">
-    <div class="total-banner">
-      <div class="total-label">Total Transfer Tax Rate</div>
-      <div class="total-rate" id="totalRate"></div>
-      <div class="total-amount" id="totalAmount"></div>
+
+  <div class="grid">
+    <a href="/calcs/transfertax/" class="card live">
+      <div class="icon">%</div>
+      <h3>PA Transfer Tax</h3>
+      <p>Sales price + municipality &rarr; total transfer tax with 50/50 buyer/seller split. All 47 PA local rate variations baked in.</p>
+      <span class="badge live">Live</span>
+    </a>
+
+    <a href="/calcs/closing-cost/" class="card live">
+      <div class="icon silver">$</div>
+      <h3>Closing Cost Estimator</h3>
+      <p>Save your fee profile, run CD-style estimates in seconds. PA TIRBOP title rates and our transfer tax data built in.</p>
+      <span class="badge live">Live</span>
+    </a>
+
+    <div class="card soon">
+      <div class="icon silver">&darr;</div>
+      <h3>DPA Program Lookup</h3>
+      <p>Quick reference for FHA, conventional, and PA down payment assistance program guidelines, limits, and overlays.</p>
+      <span class="badge soon">Coming Soon</span>
     </div>
-    <div class="breakdown-grid">
-      <div class="breakdown-col">
-        <h3>Buyer's Share (50%)</h3>
-        <div class="split-total"><div class="amount" id="buyerTotal"></div></div>
-        <div id="buyerLines"></div>
-      </div>
-      <div class="breakdown-col">
-        <h3>Seller's Share (50%)</h3>
-        <div class="split-total"><div class="amount" id="sellerTotal"></div></div>
-        <div id="sellerLines"></div>
-      </div>
-    </div>
-    <div class="disclaimer">
-      Assumes customary 50/50 buyer/seller split. PA state portion is always 1%.
-      Local rates per FNF PA Transfer Tax Variations chart (Jan 2026).
-      Consult your title company or attorney for final figures.
+
+    <div class="card soon">
+      <div class="icon silver">&#9878;</div>
+      <h3>Scenario Comparison</h3>
+      <p>Side-by-side payment, cost, and break-even analysis across loan structures over 5, 10, and 30 years.</p>
+      <span class="badge soon">Coming Soon</span>
     </div>
   </div>
 </div>
-<footer>Built by the Mortgage Banker of the People</footer>
-<script>
-const V=[
-  {m:"Bellevue Boro",c:"Allegheny",r:1.5},{m:"Bethel Park Municipality",c:"Allegheny",r:1.5},
-  {m:"Greentree Boro",c:"Allegheny",r:1.5},{m:"Hampton Twp",c:"Allegheny",r:1.5},
-  {m:"McCandless Twp",c:"Allegheny",r:1.5},{m:"McKeesport City",c:"Allegheny",r:2},
-  {m:"Monroeville Municipality",c:"Allegheny",r:1.5},{m:"Mt Lebanon Municipality",c:"Allegheny",r:1.5},
-  {m:"Mt Oliver Boro",c:"Allegheny",r:2},{m:"O'Hara Twp",c:"Allegheny",r:1.5},
-  {m:"Penn Hills Municipality",c:"Allegheny",r:2},{m:"Pine Twp",c:"Allegheny",r:1.5},
-  {m:"Pittsburgh City (Pittsburgh School District)",c:"Allegheny",r:4},
-  {m:"Pittsburgh City (Baldwin-Whitehall School District)",c:"Allegheny",r:3.5},
-  {m:"Upper St Clair Twp",c:"Allegheny",r:1.5},{m:"West Deer Twp",c:"Allegheny",r:1.5},
-  {m:"Whitehall Boro",c:"Allegheny",r:1.5},
-  {m:"Georgetown Boro",c:"Beaver",r:0.5},{m:"Hookstown Boro",c:"Beaver",r:0.5},
-  {m:"Reading City",c:"Berks",r:4.0},
-  {m:"Ferguson Twp",c:"Centre",r:1.75},{m:"State College Boro",c:"Centre",r:2},
-  {m:"Taylor Twp",c:"Centre",r:0.5},
-  {m:"Coatesville City",c:"Chester",r:2.5},{m:"Malvern Boro",c:"Chester",r:1.5},
-  {m:"Tredyffrin Twp",c:"Chester",r:1.5},
-  {m:"Colebrook Twp",c:"Clinton",r:0.5},{m:"East Keating Twp",c:"Clinton",r:0.5},
-  {m:"Chester City",c:"Delaware",r:1.5},{m:"Radnor Twp",c:"Delaware",r:1.5},
-  {m:"Upper Darby Twp",c:"Delaware",r:1.5},{m:"Upper Providence Twp",c:"Delaware",r:2},
-  {m:"Edinboro Borough",c:"Erie",r:1.5},
-  {m:"Scranton City",c:"Lackawanna",r:2.7},
-  {m:"Allentown City",c:"Lehigh",r:1.5},
-  {m:"Kingston Boro",c:"Luzerne",r:1.5},{m:"Wilkes-Barre City",c:"Luzerne",r:2.5},
-  {m:"Pittston City",c:"Luzerne",r:2.5},
-  {m:"Farrell City",c:"Mercer",r:2},{m:"Hermitage City",c:"Mercer",r:2},
-  {m:"Sharon City",c:"Mercer",r:2},{m:"Greenville Boro",c:"Mercer",r:2},
-  {m:"Philadelphia",c:"Philadelphia",r:3.578},
-  {m:"Wellersburg Boro",c:"Somerset",r:0.5},
-  {m:"Peters Township",c:"Washington",r:1.5},
-  {m:"Greensburg City",c:"Westmoreland",r:1.5},{m:"Latrobe City",c:"Westmoreland",r:1.5},
-  {m:"Murrysville Municipality",c:"Westmoreland",r:1.5},
-];
-const SR=1,DL=1;
-const $=id=>document.getElementById(id);
-const fmt=n=>n.toLocaleString('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2});
-const fP=n=>n%1===0?n+'%':parseFloat(n.toFixed(3))+'%';
-let sel=null,ai=-1;
-const gM=q=>V.filter(v=>v.m.toLowerCase().includes(q)||v.c.toLowerCase().includes(q)).slice(0,8);
 
-$('price').addEventListener('input',function(){
-  let r=this.value.replace(/[^0-9]/g,'');
-  if(r)this.value=parseInt(r).toLocaleString('en-US');
-});
-
-function rD(m){
-  const d=$('acDropdown');
-  if(!m.length){d.classList.remove('active');return;}
-  d.innerHTML=m.map((v,i)=>`<div class="ac-item" data-idx="${i}"><span class="ac-rate">${fP(v.r)} local</span><span class="ac-muni">${v.m}</span><span class="ac-county">${v.c} County</span></div>`).join('');
-  d.classList.add('active');ai=-1;
-}
-
-$('address').addEventListener('input',function(){
-  const q=this.value.trim().toLowerCase();
-  sel=null;$('selectedBadge').classList.remove('visible');$('defaultNote').style.display='';
-  if(q.length<2){$('acDropdown').classList.remove('active');return;}
-  rD(gM(q));
-});
-
-$('address').addEventListener('keydown',function(e){
-  const items=$('acDropdown').querySelectorAll('.ac-item');
-  if(!items.length)return;
-  if(e.key==='ArrowDown'){e.preventDefault();ai=Math.min(ai+1,items.length-1);}
-  if(e.key==='ArrowUp'){e.preventDefault();ai=Math.max(ai-1,0);}
-  items.forEach((el,i)=>el.classList.toggle('selected',i===ai));
-  if(e.key==='Enter'&&ai>=0){e.preventDefault();items[ai].click();}
-});
-
-$('acDropdown').addEventListener('click',function(e){
-  const item=e.target.closest('.ac-item');
-  if(!item)return;
-  const matches=gM($('address').value.trim().toLowerCase());
-  sel=matches[parseInt(item.dataset.idx)];
-  $('address').value=sel.m;
-  $('acDropdown').classList.remove('active');
-  $('defaultNote').style.display='none';
-  $('badgeText').textContent=`${sel.m}, ${sel.c} County — ${fP(sel.r)} local rate`;
-  $('selectedBadge').classList.add('visible');
-});
-
-$('badgeClear').addEventListener('click',()=>{
-  sel=null;$('address').value='';$('selectedBadge').classList.remove('visible');
-  $('defaultNote').style.display='';$('address').focus();
-});
-
-document.addEventListener('click',e=>{if(!e.target.closest('.input-group'))$('acDropdown').classList.remove('active');});
-
-$('calcBtn').addEventListener('click',function(){
-  const raw=$('price').value.replace(/[^0-9]/g,'');
-  const price=parseFloat(raw);
-  if(!price||price<=0){$('price').focus();return;}
-  const lr=sel?sel.r:DL, tr=SR+lr;
-  const tt=price*(tr/100), st=price*(SR/100), lt=price*(lr/100);
-  const half=tt/2;
-  $('totalRate').textContent=fP(tr);
-  $('totalAmount').innerHTML=`<strong>${fmt(tt)}</strong> total on ${fmt(price)}`;
-  $('buyerTotal').textContent=fmt(half);
-  $('sellerTotal').textContent=fmt(half);
-  const lH=(label,pct,amt)=>`<div class="line-item-row"><span class="li-name">${label}</span><span class="li-data"><span class="pct">${fP(pct)}</span><span class="amt">${fmt(amt)}</span></span></div>`;
-  const lines=lH('PA State',SR/2,st/2)+lH('Local',lr/2,lt/2);
-  $('buyerLines').innerHTML=lines;
-  $('sellerLines').innerHTML=lines;
-  $('results').classList.add('visible');
-  $('results').scrollIntoView({behavior:'smooth',block:'start'});
-});
-
-$('price').addEventListener('keydown',e=>{if(e.key==='Enter')$('calcBtn').click();});
-</script>
+<footer>Built by the <a href="/">Mortgage Banker of the People</a></footer>
 </body>
 </html>
