@@ -368,10 +368,19 @@
 
   footer .sub {
     font-size: 0.72rem;
-    color: var(--blue);
+    color: var(--charcoal);
     margin-top: 4px;
     font-weight: 400;
   }
+
+  footer .sub a {
+    color: var(--kelly);
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.15s;
+  }
+
+  footer .sub a:hover { color: var(--kelly-dark); text-decoration: underline; }
 
   footer .go-birds {
     margin-top: 10px;
@@ -491,7 +500,7 @@
 <!-- FOOTER -->
 <footer>
   <p>Built by the Mortgage Banker of the People</p>
-  <p class="sub">MortgageBankerOfThePeople.com</p>
+  <p class="sub"><a href="https://x.com/MortgageBanker" target="_blank" rel="noopener">@MortgageBanker</a></p>
   <p class="go-birds">GO BIRDS!</p>
 </footer>
 
