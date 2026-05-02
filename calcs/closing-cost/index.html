@@ -133,18 +133,41 @@
     border-color:var(--kelly);
     box-shadow:0 0 0 3px rgba(0,112,60,0.18);
   }
-  .has-prefix { padding-left:26px; }
-  .has-suffix { padding-right:36px; }
+  .has-prefix { padding-left:34px; }
+  .has-suffix { padding-right:38px; }
   .prefix, .suffix {
     position:absolute;
     top:33px;
     color:var(--silver-dark);
-    font-weight:600;
-    font-size:0.95rem;
+    font-weight:700;
+    font-size:1rem;
     pointer-events:none;
   }
-  .prefix { left:13px; }
-  .suffix { right:13px; }
+  .prefix { left:14px; }
+  .suffix { right:14px; }
+  .mi-panel {
+    margin:18px -22px 0;
+    padding:16px 22px 14px;
+    background:var(--kelly-light);
+    border-top:1.5px solid var(--kelly);
+    border-bottom:1.5px solid var(--kelly);
+  }
+  .mi-header {
+    font-weight:700;
+    font-size:0.78rem;
+    text-transform:uppercase;
+    letter-spacing:0.08em;
+    color:var(--kelly-dark);
+    margin-bottom:12px;
+  }
+  .mi-hint {
+    margin-top:8px;
+    font-size:0.82rem;
+    color:var(--kelly-dark);
+    font-weight:500;
+    line-height:1.4;
+  }
+  .mi-hint strong { color:var(--kelly-dark); }
   .toggle-group {
     display:inline-flex;
     background:var(--silver-light);
@@ -491,14 +514,19 @@
         <input type="text" id="q_price" class="has-prefix" placeholder="350,000" inputmode="numeric">
       </div>
       <div class="field">
-        <label>Down Payment <span class="hint">$ amount</span></label>
+        <label>Down Payment</label>
         <span class="prefix">$</span>
         <input type="text" id="q_down" class="has-prefix" placeholder="35,000" inputmode="numeric">
       </div>
       <div class="field">
-        <label>Loan Amount <span class="hint">auto-calc</span></label>
+        <label>Loan Amount</label>
         <span class="prefix">$</span>
         <input type="text" id="q_loan" class="has-prefix" placeholder="315,000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>LTV</label>
+        <input type="text" id="q_ltv" class="has-suffix" placeholder="90" inputmode="decimal">
+        <span class="suffix">%</span>
       </div>
       <div class="field">
         <label>Loan Type</label>
@@ -540,6 +568,26 @@
     <div class="field" style="display:flex; align-items:center; gap:10px; margin-top:10px;">
       <input type="checkbox" id="q_ownersTitle" checked style="width:auto;">
       <label for="q_ownersTitle" style="margin:0; font-weight:500; font-size:0.88rem;">Include Owner's Title Insurance (purchase default)</label>
+    </div>
+
+    <div class="mi-panel" id="miPanel" style="display:none;">
+      <div class="mi-header">Mortgage Insurance &middot; LTV &gt; 80%</div>
+      <div class="grid-2">
+        <div class="field" style="margin-bottom:0;">
+          <label>MI Mode</label>
+          <select id="mi_mode">
+            <option value="monthly">Monthly (BPMI / monthly MIP)</option>
+            <option value="upfront">Single Premium &mdash; Paid at Close</option>
+            <option value="upfront_financed">Single Premium &mdash; Financed into Loan</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>MI Rate</label>
+          <input type="number" id="mi_rate" placeholder="0.55" step="0.001" min="0" class="has-suffix">
+          <span class="suffix">%</span>
+        </div>
+      </div>
+      <div class="mi-hint" id="miHint">Enter a rate to preview the impact.</div>
     </div>
 
     <button class="btn" id="calcBtn">Calculate Closing Costs</button>
@@ -738,21 +786,93 @@ $('resetProfileBtn').addEventListener('click', ()=>{
 });
 
 /* ── Inputs: format & link ── */
-['q_price','q_down','q_loan','q_tax','q_hoi'].forEach(id=>{
-  $(id).addEventListener('input', function(){
-    const r = this.value.replace(/[^0-9]/g,'');
-    this.value = r ? parseInt(r).toLocaleString('en-US') : '';
-  });
+function fmtIntField(el){
+  const r = el.value.replace(/[^0-9]/g,'');
+  el.value = r ? parseInt(r).toLocaleString('en-US') : '';
+}
+function fmtLtvField(el){
+  let v = el.value.replace(/[^0-9.]/g,'');
+  const parts = v.split('.');
+  if (parts.length > 1) v = parts[0] + '.' + parts.slice(1).join('').slice(0,2);
+  el.value = v;
+}
+['q_price','q_tax','q_hoi'].forEach(id=>{
+  $(id).addEventListener('input', function(){ fmtIntField(this); });
 });
-function syncLoanFromDown(){
-  const p = cleanNum($('q_price').value);
-  const d = cleanNum($('q_down').value);
-  if (p > 0 && d >= 0 && d <= p) {
-    $('q_loan').value = (p - d).toLocaleString('en-US');
+
+/* Bidirectional sync: down ↔ loan ↔ ltv (with sales price as anchor) */
+let lastEdited = 'down';
+function bindSrc(id, key, fmtFn){
+  const el = $(id);
+  el.addEventListener('focus', ()=>{ lastEdited = key; });
+  el.addEventListener('input', function(){
+    lastEdited = key;
+    fmtFn(this);
+    syncLoanFields();
+  });
+}
+bindSrc('q_down', 'down', fmtIntField);
+bindSrc('q_loan', 'loan', fmtIntField);
+bindSrc('q_ltv',  'ltv',  fmtLtvField);
+$('q_price').addEventListener('input', syncLoanFields);
+
+function syncLoanFields(){
+  const price = cleanNum($('q_price').value);
+  let ltv = 0;
+  if (price <= 0) { updateMiPanel(0); return; }
+
+  const active = document.activeElement ? document.activeElement.id : '';
+  const setIfNotActive = (id, value, isLtv) => {
+    if (active === id) return;
+    if (isLtv) $(id).value = value > 0 ? value.toFixed(2) : '';
+    else $(id).value = value > 0 ? Math.round(value).toLocaleString('en-US') : '';
+  };
+
+  if (lastEdited === 'down') {
+    const down = cleanNum($('q_down').value);
+    const loan = Math.max(0, price - down);
+    ltv = (loan / price) * 100;
+    setIfNotActive('q_loan', loan, false);
+    setIfNotActive('q_ltv', ltv, true);
+  } else if (lastEdited === 'loan') {
+    const loan = cleanNum($('q_loan').value);
+    const down = Math.max(0, price - loan);
+    ltv = (loan / price) * 100;
+    setIfNotActive('q_down', down, false);
+    setIfNotActive('q_ltv', ltv, true);
+  } else if (lastEdited === 'ltv') {
+    ltv = cleanNum($('q_ltv').value);
+    const loan = price * (ltv / 100);
+    const down = Math.max(0, price - loan);
+    setIfNotActive('q_loan', loan, false);
+    setIfNotActive('q_down', down, false);
+  }
+
+  updateMiPanel(ltv);
+}
+
+function updateMiPanel(ltv){
+  $('miPanel').style.display = ltv > 80 ? 'block' : 'none';
+  if (ltv > 80) updateMiHint();
+}
+function updateMiHint(){
+  const loan = cleanNum($('q_loan').value);
+  const rate = cleanNum($('mi_rate').value);
+  const mode = $('mi_mode').value;
+  if (loan <= 0 || rate <= 0) { $('miHint').textContent = 'Enter a rate to preview the impact.'; return; }
+  if (mode === 'monthly') {
+    const mo = loan * (rate/100) / 12;
+    $('miHint').innerHTML = `<strong>≈ ${fmt(mo)}/mo</strong> on monthly payment &middot; not in cash to close.`;
+  } else if (mode === 'upfront') {
+    const upfront = loan * (rate/100);
+    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> added to closing costs (paid at close).`;
+  } else {
+    const upfront = loan * (rate/100);
+    $('miHint').innerHTML = `<strong>${fmt(upfront)}</strong> financed into loan &middot; not in cash to close, increases base loan.`;
   }
 }
-$('q_price').addEventListener('input', syncLoanFromDown);
-$('q_down').addEventListener('input', syncLoanFromDown);
+$('mi_rate').addEventListener('input', updateMiHint);
+$('mi_mode').addEventListener('change', updateMiHint);
 
 /* default closing date = today + 30 days */
 (function(){
@@ -832,12 +952,16 @@ $('calcBtn').addEventListener('click', ()=>{
   const price = cleanNum($('q_price').value);
   const down  = cleanNum($('q_down').value);
   const loan  = cleanNum($('q_loan').value);
+  const ltv   = price > 0 ? (loan / price) * 100 : 0;
   const rate  = cleanNum($('q_rate').value);
   const annTax= cleanNum($('q_tax').value);
   const annHOI= cleanNum($('q_hoi').value);
   const type  = $('q_type').value;
   const includeOwners = $('q_ownersTitle').checked;
   const close = $('q_close').value;
+  const miMode = $('mi_mode').value;
+  const miRate = cleanNum($('mi_rate').value);
+  const miActive = ltv > 80 && miRate > 0;
 
   if (price <= 0) { $('q_price').focus(); return; }
   if (loan <= 0)  { $('q_loan').focus(); return; }
@@ -850,12 +974,14 @@ $('calcBtn').addEventListener('click', ()=>{
   /* Section A: Origination */
   const origAmt = profile.origMode === 'pct' ? loan * (profile.orig/100) : profile.orig;
   const pointsAmt = loan * (profile.points/100);
+  const miUpfrontPaid = (miActive && miMode === 'upfront') ? loan * (miRate/100) : 0;
   const A = [
     {name:`Origination${profile.origMode==='pct'?` (${profile.orig}%)`:''}`, amt:origAmt},
     {name:`Discount Points (${profile.points}%)`, amt:pointsAmt},
     {name:'Application Fee', amt:profile.app},
     {name:'Underwriting Fee', amt:profile.uw},
     {name:'Processing Fee', amt:profile.proc},
+    {name:`Mortgage Insurance Premium (${miRate}% upfront)`, amt:miUpfrontPaid},
   ].filter(x => x.amt > 0);
   const Atotal = A.reduce((s,x)=>s+x.amt, 0);
 
@@ -914,7 +1040,9 @@ $('calcBtn').addEventListener('click', ()=>{
 
   const totalCC = Atotal + Btotal + Ctotal + Etotal + Ftotal + Gtotal + Htotal;
   const cashToClose = totalCC + down;
-  const fee = financedFee(type, loan);
+  const loanTypeFee = financedFee(type, loan);
+  const miFinanced = (miActive && miMode === 'upfront_financed') ? loan * (miRate/100) : 0;
+  const miMonthly = (miActive && miMode === 'monthly') ? loan * (miRate/100) / 12 : 0;
 
   let html = '';
   html += sectionHTML('A', 'Origination Charges', A, Atotal);
@@ -928,13 +1056,22 @@ $('calcBtn').addEventListener('click', ()=>{
 
   $('totalCC').textContent = fmt(totalCC);
   $('cashToClose').innerHTML = `<strong>${fmt(cashToClose)}</strong>`;
-  $('cashSub').textContent = `${fmt0(totalCC)} closing costs + ${fmt0(down)} down`;
+  let sub = `${fmt0(totalCC)} closing costs + ${fmt0(down)} down`;
+  if (miMonthly > 0) sub += ` · MI ${fmt(miMonthly)}/mo`;
+  $('cashSub').textContent = sub;
 
-  if (fee > 0) {
+  const financedLines = [];
+  if (loanTypeFee > 0) {
     const label = type === 'fha' ? 'FHA UFMIP (1.75%)'
                 : type === 'va'  ? 'VA Funding Fee (2.15%)'
                 : 'USDA Guarantee Fee (1.0%)';
-    $('financedNote').innerHTML = `<strong>Financed:</strong> ${label} = ${fmt(fee)} added to base loan (not in cash to close).`;
+    financedLines.push(`${label} = ${fmt(loanTypeFee)}`);
+  }
+  if (miFinanced > 0) {
+    financedLines.push(`MI Single Premium (${miRate}%) = ${fmt(miFinanced)}`);
+  }
+  if (financedLines.length) {
+    $('financedNote').innerHTML = `<strong>Financed into loan:</strong> ${financedLines.join(' · ')} (not in cash to close).`;
     $('financedNote').style.display = 'block';
   } else {
     $('financedNote').style.display = 'none';
