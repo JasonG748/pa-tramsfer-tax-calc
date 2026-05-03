@@ -145,14 +145,14 @@
   }
   .prefix { left:14px; }
   .suffix { right:14px; }
-  .mi-panel {
+  .mi-panel, .va-panel {
     margin:18px -22px 0;
     padding:16px 22px 14px;
     background:var(--kelly-light);
     border-top:1.5px solid var(--kelly);
     border-bottom:1.5px solid var(--kelly);
   }
-  .mi-header {
+  .mi-header, .va-header {
     font-weight:700;
     font-size:0.78rem;
     text-transform:uppercase;
@@ -160,14 +160,29 @@
     color:var(--kelly-dark);
     margin-bottom:12px;
   }
-  .mi-hint {
+  .mi-hint, .va-hint {
     margin-top:8px;
     font-size:0.82rem;
     color:var(--kelly-dark);
     font-weight:500;
     line-height:1.4;
   }
-  .mi-hint strong { color:var(--kelly-dark); }
+  .mi-hint strong, .va-hint strong { color:var(--kelly-dark); }
+  .check-row {
+    display:flex;
+    gap:18px;
+    flex-wrap:wrap;
+  }
+  .check-label {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.88rem;
+    font-weight:500;
+    color:var(--charcoal);
+    cursor:pointer;
+  }
+  .check-label input[type="checkbox"] { width:auto; margin:0; cursor:pointer; }
   .toggle-group {
     display:inline-flex;
     background:var(--silver-light);
@@ -533,7 +548,7 @@
         <select id="q_type">
           <option value="conv">Conventional</option>
           <option value="fha">FHA (1.75% UFMIP financed)</option>
-          <option value="va">VA (2.15% funding fee financed)</option>
+          <option value="va">VA (funding fee varies, financed)</option>
           <option value="usda">USDA (1.0% guarantee fee financed)</option>
         </select>
       </div>
@@ -568,6 +583,21 @@
     <div class="field" style="display:flex; align-items:center; gap:10px; margin-top:10px;">
       <input type="checkbox" id="q_ownersTitle" checked style="width:auto;">
       <label for="q_ownersTitle" style="margin:0; font-weight:500; font-size:0.88rem;">Include Owner's Title Insurance (purchase default)</label>
+    </div>
+
+    <div class="va-panel" id="vaPanel" style="display:none;">
+      <div class="va-header">VA Loan Options</div>
+      <div class="check-row">
+        <label class="check-label">
+          <input type="checkbox" id="va_firstUse" checked>
+          First-time VA use
+        </label>
+        <label class="check-label">
+          <input type="checkbox" id="va_exempt">
+          Funding fee exempt (disability)
+        </label>
+      </div>
+      <div class="va-hint" id="vaHint">Enter loan amount to preview the funding fee.</div>
     </div>
 
     <div class="mi-panel" id="miPanel" style="display:none;">
@@ -693,10 +723,21 @@ function lendersTitleSimul(){ return 100; }
 function lendersTitleStandalone(loan){ return tirbopBasic(loan); }
 
 /* ── Loan-type financed upfront fees ── */
-function financedFee(type, baseLoan){
+/* VA funding fee schedule (purchase, financed):
+   Down <5%   → 2.15% first use, 3.30% subsequent
+   Down 5-10% → 1.50% (first or subsequent)
+   Down 10%+  → 1.25% (first or subsequent)
+   Exempt (disability)  → 0%                            */
+function vaFundingFeeRate(ltv, firstUse, exempt){
+  if (exempt) return 0;
+  if (ltv > 95)      return firstUse ? 0.0215 : 0.0330;
+  else if (ltv > 90) return 0.0150;
+  else               return 0.0125;
+}
+function financedFee(type, baseLoan, ltv, vaFirstUse, vaExempt){
   switch(type){
     case 'fha': return baseLoan * 0.0175;
-    case 'va':  return baseLoan * 0.0215;
+    case 'va':  return baseLoan * vaFundingFeeRate(ltv, vaFirstUse, vaExempt);
     case 'usda':return baseLoan * 0.0100;
     default: return 0;
   }
@@ -849,6 +890,7 @@ function syncLoanFields(){
   }
 
   updateMiPanel(ltv);
+  if ($('q_type').value === 'va') updateVaHint();
 }
 
 function updateMiPanel(ltv){
@@ -873,6 +915,34 @@ function updateMiHint(){
 }
 $('mi_rate').addEventListener('input', updateMiHint);
 $('mi_mode').addEventListener('change', updateMiHint);
+
+function updateVaPanel(){
+  const isVA = $('q_type').value === 'va';
+  $('vaPanel').style.display = isVA ? 'block' : 'none';
+  if (isVA) updateVaHint();
+}
+function updateVaHint(){
+  const loan = cleanNum($('q_loan').value);
+  const price = cleanNum($('q_price').value);
+  const ltv = price > 0 ? (loan / price) * 100 : 0;
+  const firstUse = $('va_firstUse').checked;
+  const exempt = $('va_exempt').checked;
+  if (exempt) {
+    $('vaHint').innerHTML = '<strong>Exempt</strong> &middot; no funding fee charged.';
+    return;
+  }
+  if (loan <= 0 || price <= 0) {
+    $('vaHint').textContent = 'Enter sales price and loan amount to preview the funding fee.';
+    return;
+  }
+  const rate = vaFundingFeeRate(ltv, firstUse, exempt);
+  const fee = loan * rate;
+  const downPct = (100 - ltv).toFixed(1);
+  $('vaHint').innerHTML = `<strong>${(rate*100).toFixed(2)}% = ${fmt(fee)}</strong> financed &middot; ${downPct}% down, ${firstUse ? 'first-time' : 'subsequent'} use.`;
+}
+$('q_type').addEventListener('change', updateVaPanel);
+$('va_firstUse').addEventListener('change', updateVaHint);
+$('va_exempt').addEventListener('change', updateVaHint);
 
 /* default closing date = today + 30 days */
 (function(){
@@ -1040,7 +1110,9 @@ $('calcBtn').addEventListener('click', ()=>{
 
   const totalCC = Atotal + Btotal + Ctotal + Etotal + Ftotal + Gtotal + Htotal;
   const cashToClose = totalCC + down;
-  const loanTypeFee = financedFee(type, loan);
+  const vaFirstUse = $('va_firstUse').checked;
+  const vaExempt = $('va_exempt').checked;
+  const loanTypeFee = financedFee(type, loan, ltv, vaFirstUse, vaExempt);
   const miFinanced = (miActive && miMode === 'upfront_financed') ? loan * (miRate/100) : 0;
   const miMonthly = (miActive && miMode === 'monthly') ? loan * (miRate/100) / 12 : 0;
 
@@ -1062,9 +1134,13 @@ $('calcBtn').addEventListener('click', ()=>{
 
   const financedLines = [];
   if (loanTypeFee > 0) {
-    const label = type === 'fha' ? 'FHA UFMIP (1.75%)'
-                : type === 'va'  ? 'VA Funding Fee (2.15%)'
-                : 'USDA Guarantee Fee (1.0%)';
+    let label;
+    if (type === 'fha') label = 'FHA UFMIP (1.75%)';
+    else if (type === 'va') {
+      const vaPct = ((loanTypeFee / loan) * 100).toFixed(2);
+      label = `VA Funding Fee (${vaPct}%${vaFirstUse ? ', first-use' : ', subsequent'})`;
+    }
+    else label = 'USDA Guarantee Fee (1.0%)';
     financedLines.push(`${label} = ${fmt(loanTypeFee)}`);
   }
   if (miFinanced > 0) {
